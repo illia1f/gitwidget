@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { createContext, PropsWithChildren, useCallback, useContext, useState } from 'react';
+import { createContext, PropsWithChildren, use, useCallback, useState } from 'react';
 
 export interface BuilderConfig {
   username: string;
@@ -110,7 +110,7 @@ export const Root = ({ className, children }: RootProps) => {
 };
 
 export const useBuilderContext = () => {
-  const context = useContext(BuilderContext);
+  const context = use(BuilderContext);
   if (context === undefined) {
     throw new Error('useBuilderContext must be used within a BuilderProvider');
   }

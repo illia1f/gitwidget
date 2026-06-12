@@ -1,5 +1,7 @@
 /**
  * Generate CSS animations for contribution cells
+ * https://www.w3.org/TR/SVG11/styling.html
+ * https://www.w3.org/TR/SVG11/animate.html
  */
 export const generateCellAnimations = (enableAnimations: boolean): string => {
   const animationCSS = !enableAnimations
