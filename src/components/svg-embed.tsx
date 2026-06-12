@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 interface SVGEmbedProps {
@@ -9,68 +9,79 @@ interface SVGEmbedProps {
   style?: React.CSSProperties;
   fallback?: React.ReactNode;
   onLoad?: () => void;
-  onError?: (error: React.SyntheticEvent<HTMLObjectElement, Event>) => void;
+  onError?: (error: Event) => void;
 }
 
-export const SVGEmbed = React.forwardRef<HTMLObjectElement, SVGEmbedProps>(
-  ({ src, className, style, fallback, onLoad, onError, ...props }, ref) => {
-    const [isLoading, setIsLoading] = useState(true);
-    const [hasError, setHasError] = useState(false);
-    const [objectKey, setObjectKey] = useState(0);
+export const SVGEmbed = ({ src, className, style, fallback, onLoad, onError }: SVGEmbedProps) => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
+  const [prevSrc, setPrevSrc] = useState(src);
 
-    useEffect(() => {
-      setIsLoading(true);
-      setHasError(false);
-      // Force object recreation when src changes to bypass caching
-      setObjectKey((prev) => prev + 1);
-    }, [src]);
+  // Reset load state inline during render when src changes; the `key` on
+  // <object> below recreates the element so the new src bypasses caching.
+  if (src !== prevSrc) {
+    setPrevSrc(src);
+    setIsLoading(true);
+    setHasError(false);
+  }
+
+  const objectRef = useRef<HTMLObjectElement>(null);
+  const callbacksRef = useRef({ onLoad, onError });
+  callbacksRef.current = { onLoad, onError };
+
+  // React does not delegate load/error events on <object>, so listen natively.
+  useEffect(() => {
+    const node = objectRef.current;
+    if (!node) return;
 
     const handleLoad = () => {
       setIsLoading(false);
       setHasError(false);
-      onLoad?.();
+      callbacksRef.current.onLoad?.();
     };
 
-    const handleError = (error: React.SyntheticEvent<HTMLObjectElement, Event>) => {
+    const handleError = (event: Event) => {
       setIsLoading(false);
       setHasError(true);
-      onError?.(error);
+      callbacksRef.current.onError?.(event);
     };
 
-    if (hasError && fallback) {
-      return <>{fallback}</>;
-    }
+    node.addEventListener('load', handleLoad);
+    node.addEventListener('error', handleError);
+    return () => {
+      node.removeEventListener('load', handleLoad);
+      node.removeEventListener('error', handleError);
+    };
+  }, [src]);
 
-    return (
-      <div className={cn('relative w-full', className)}>
-        {isLoading && (
-          <div className="bg-muted/50 absolute inset-0 flex items-center justify-center rounded-lg">
-            <div className="text-muted-foreground flex items-center space-x-2 text-sm">
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-              <span>Loading SVG...</span>
-            </div>
+  if (hasError && fallback) {
+    return <>{fallback}</>;
+  }
+
+  return (
+    <div className={cn('relative w-full', className)}>
+      {isLoading && (
+        <div className="bg-muted/50 absolute inset-0 flex items-center justify-center rounded-lg">
+          <div className="text-muted-foreground flex items-center space-x-2 text-sm">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            <span>Loading SVG...</span>
+          </div>
+        </div>
+      )}
+      <object
+        key={src}
+        ref={objectRef}
+        data={src}
+        type="image/svg+xml"
+        className={cn('bg-background block h-auto w-full', isLoading && 'opacity-0', className)}
+        style={style}
+      >
+        {fallback || (
+          <div className="bg-muted flex items-center justify-center rounded-lg p-8">
+            <p className="text-muted-foreground text-sm">SVG not supported</p>
           </div>
         )}
-        <object
-          key={objectKey}
-          ref={ref}
-          data={src}
-          type="image/svg+xml"
-          className={cn('bg-background block h-auto w-full', isLoading && 'opacity-0', className)}
-          style={style}
-          onLoad={handleLoad}
-          onError={handleError}
-          {...props}
-        >
-          {fallback || (
-            <div className="bg-muted flex items-center justify-center rounded-lg p-8">
-              <p className="text-muted-foreground text-sm">SVG not supported</p>
-            </div>
-          )}
-        </object>
-      </div>
-    );
-  },
-);
-
-SVGEmbed.displayName = 'SVGEmbed';
+      </object>
+    </div>
+  );
+};

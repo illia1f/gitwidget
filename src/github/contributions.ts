@@ -99,7 +99,7 @@ const getCustomRange = (from: string, to: string): DateRange => {
 /**
  * Get contribution calendar data for a user
  */
-export const getContributionCalendar = async (
+const getContributionCalendar = async (
   params: ContributionQueryParams,
 ): Promise<ContributionCalendarResult> => {
   const { username, year } = params;

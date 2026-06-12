@@ -21,7 +21,7 @@ class GitHubGraphQLError extends Error {
   }
 }
 
-export class GitHubGraphQLClient {
+class GitHubGraphQLClient {
   private readonly endpoint: string;
   private readonly token: string;
 

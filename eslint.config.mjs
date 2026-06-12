@@ -10,6 +10,8 @@ const compat = new FlatCompat({
 });
 
 const eslintConfig = [
+  // Build output and deps (next lint ignored these automatically; eslint CLI does not)
+  { ignores: ['.next/**', 'out/**', 'next-env.d.ts'] },
   // Next.js + TypeScript recommended rules
   ...compat.extends('next/core-web-vitals', 'next/typescript'),
   // Disable rules that conflict with Prettier formatting

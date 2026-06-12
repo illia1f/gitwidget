@@ -7,7 +7,7 @@ import type { ContributionLevel } from '@/github/types';
 
 export type { ContributionThemeColors };
 
-export const lightTheme: ContributionThemeColors = {
+const lightTheme: ContributionThemeColors = {
   background: '#ffffff',
   foreground: '#0d1117',
   muted: '#f6f8fa',
@@ -28,7 +28,7 @@ export const lightTheme: ContributionThemeColors = {
   },
 };
 
-export const darkTheme: ContributionThemeColors = {
+const darkTheme: ContributionThemeColors = {
   background: '#0d1117',
   foreground: '#f0f6fc',
   muted: '#21262d',

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,7 +16,8 @@ import { Slider } from '@/components/ui/slider';
 
 import { useBuilderContext } from './builder-root';
 import { cn } from '@/lib/utils';
-import { useDebouncedValue } from '@/hooks/use-debounced-value';
+
+const USERNAME_DEBOUNCE_MS = 500;
 
 interface BuilderSidebarProps {
   className?: string;
@@ -25,17 +26,20 @@ interface BuilderSidebarProps {
 export const BuilderSidebar = ({ className }: BuilderSidebarProps) => {
   const { config, updateConfig } = useBuilderContext();
   const [usernameInput, setUsernameInput] = useState<string>(config.username);
-  const debouncedUsername = useDebouncedValue(usernameInput, 500);
+  const usernameTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 10 }, (_, i) => currentYear - i);
 
-  useEffect(() => {
-    if (debouncedUsername !== config.username) {
-      updateConfig({ username: debouncedUsername });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedUsername]);
+  useEffect(() => () => clearTimeout(usernameTimerRef.current), []);
+
+  const handleUsernameChange = (value: string) => {
+    setUsernameInput(value);
+    clearTimeout(usernameTimerRef.current);
+    usernameTimerRef.current = setTimeout(() => {
+      updateConfig({ username: value });
+    }, USERNAME_DEBOUNCE_MS);
+  };
 
   return (
     <div
@@ -62,7 +66,7 @@ export const BuilderSidebar = ({ className }: BuilderSidebarProps) => {
               id="username"
               placeholder="octocat"
               value={usernameInput}
-              onChange={(e) => setUsernameInput(e.target.value)}
+              onChange={(e) => handleUsernameChange(e.target.value)}
               className="btn-transition border-border bg-input text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary/20 focus:ring-2"
             />
           </div>
